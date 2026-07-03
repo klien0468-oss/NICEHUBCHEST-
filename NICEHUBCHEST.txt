@@ -1,0 +1,971 @@
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    LocalPlayer = Players.PlayerAdded:Wait()
+end
+local autoFarmEnabled = false
+local isHopping = false
+local ChestCount = 0
+local startTime = os.clock()
+if game.CoreGui:FindFirstChild("BananaButtonUI") then
+    game.CoreGui.BananaButtonUI:Destroy()
+end
+local ButtonScreenGui = Instance.new("ScreenGui")
+ButtonScreenGui.Name = "BananaButtonUI"
+ButtonScreenGui.IgnoreGuiInset = true
+ButtonScreenGui.ResetOnSpawn = false
+ButtonScreenGui.DisplayOrder = 1000
+ButtonScreenGui.Parent = game.CoreGui
+local Container = Instance.new("Frame")
+Container.Parent = ButtonScreenGui
+Container.Size = UDim2.fromOffset(190, 62)
+Container.Position = UDim2.fromOffset(50, 20)
+Container.BackgroundColor3 = Color3.fromRGB(255, 170, 60)
+Container.BackgroundTransparency = 0
+Container.BorderSizePixel = 0
+Container.ZIndex = 5
+Container.Active = true
+Container.Selectable = true
+local ContainerCorner = Instance.new("UICorner")
+ContainerCorner.CornerRadius = UDim.new(0, 18)
+ContainerCorner.Parent = Container
+local ContainerGlow = Instance.new("UIStroke", Container)
+ContainerGlow.Color = Color3.fromRGB(255, 200, 100)
+ContainerGlow.Thickness = 3
+ContainerGlow.Transparency = 0
+local InnerBackground = Instance.new("Frame")
+InnerBackground.Parent = Container
+InnerBackground.Size = UDim2.fromScale(0.95, 0.9)
+InnerBackground.Position = UDim2.fromScale(0.025, 0.05)
+InnerBackground.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+InnerBackground.BackgroundTransparency = 0.4
+InnerBackground.BorderSizePixel = 0
+InnerBackground.ZIndex = 6
+local InnerCorner = Instance.new("UICorner")
+InnerCorner.CornerRadius = UDim.new(0, 14)
+InnerCorner.Parent = InnerBackground
+local GlassEffect = Instance.new("Frame")
+GlassEffect.Parent = InnerBackground
+GlassEffect.Size = UDim2.fromScale(1, 1)
+GlassEffect.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GlassEffect.BackgroundTransparency = 0.95
+GlassEffect.BorderSizePixel = 0
+GlassEffect.ZIndex = 7
+local GlassCorner = Instance.new("UICorner")
+GlassCorner.CornerRadius = UDim.new(0, 14)
+GlassCorner.Parent = GlassEffect
+local Button = Instance.new("TextButton")
+Button.Parent = InnerBackground
+Button.Size = UDim2.fromScale(1, 1)
+Button.Position = UDim2.fromScale(0, 0)
+Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Button.BackgroundTransparency = 0.6
+Button.BorderSizePixel = 0
+Button.AutoButtonColor = false
+Button.Text = ""
+Button.ZIndex = 10
+Button.Active = true
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 14)
+Corner.Parent = Button
+local Stroke = Instance.new("UIStroke", Button)
+Stroke.Color = Color3.fromRGB(255, 170, 60)
+Stroke.Thickness = 2
+Stroke.Transparency = 0
+Stroke.LineJoinMode = Enum.LineJoinMode.Round
+local Glow = Instance.new("UIStroke", Button)
+Glow.Color = Color3.fromRGB(255, 185, 90)
+Glow.Thickness = 5
+Glow.Transparency = 0.85
+Glow.ZIndex = 9
+local Noise = Instance.new("ImageLabel")
+Noise.Parent = Button
+Noise.Size = UDim2.fromScale(1, 1)
+Noise.BackgroundTransparency = 1
+Noise.Image = "rbxassetid://110756262965540"
+Noise.ImageTransparency = 0.96
+Noise.ZIndex = 8
+local ButtonText = Instance.new("TextLabel")
+ButtonText.Parent = Button
+ButtonText.Size = UDim2.fromScale(1, 1)
+ButtonText.BackgroundTransparency = 1
+ButtonText.Text = "Hop Server"
+ButtonText.Font = Enum.Font.GothamBold
+ButtonText.TextSize = 14
+ButtonText.TextColor3 = Color3.fromRGB(255, 190, 90)
+ButtonText.TextStrokeColor3 = Color3.fromRGB(120, 80, 30)
+ButtonText.TextStrokeTransparency = 0.35
+ButtonText.ZIndex = 11
+local HintText = Instance.new("TextLabel")
+HintText.Parent = Container
+HintText.Size = UDim2.new(1, 0, 0.3, 0)
+HintText.Position = UDim2.new(0, 0, -0.35, 0)
+HintText.BackgroundTransparency = 1
+HintText.Text = "Drag anywhere to move • Click to toggle"
+HintText.Font = Enum.Font.Gotham
+HintText.TextSize = 10
+HintText.TextColor3 = Color3.fromRGB(255, 200, 100)
+HintText.TextTransparency = 0.7
+HintText.ZIndex = 5
+task.delay(5, function()
+    TweenService:Create(
+        HintText,
+        TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {
+            TextTransparency = 1
+        }
+    ):Play()
+    task.wait(1)
+    HintText.Visible = false
+end)
+if game.CoreGui:FindFirstChild("BananaUI") then
+    game.CoreGui.BananaUI:Destroy()
+end
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BananaUI"
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+local WorldBlur = Instance.new("BlurEffect")
+WorldBlur.Name = "BananaBlur"
+WorldBlur.Size = 18
+WorldBlur.Enabled = true
+WorldBlur.Parent = Lighting
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0.75,0,0.72,0)
+Main.Position = UDim2.new(0.5,0,0.5,0)
+Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.BackgroundColor3 = Color3.fromRGB(12,12,12)
+Main.BackgroundTransparency = 0.25
+Main.BorderSizePixel = 0
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,16)
+local StrokeMain = Instance.new("UIStroke",Main)
+StrokeMain.Color = Color3.fromRGB(255,170,60)
+StrokeMain.Thickness = 2
+local NoiseMain = Instance.new("ImageLabel",Main)
+NoiseMain.Size = UDim2.new(1,0,1,0)
+NoiseMain.BackgroundTransparency = 1
+NoiseMain.Image = "rbxassetid://110756262965540"
+NoiseMain.ImageTransparency = 0.92
+NoiseMain.ZIndex = 2
+local Title = Instance.new("TextLabel",Main)
+Title.Size = UDim2.new(1,0,0,55)
+Title.BackgroundTransparency = 1
+Title.Text = "Status Item : NICE Hub Stats Checker"
+Title.TextColor3 = Color3.fromRGB(255,190,90)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.ZIndex = 3
+local AvatarIcon = Instance.new("ImageLabel",Main)
+AvatarIcon.Size = UDim2.new(0,50,0,50)
+AvatarIcon.Position = UDim2.new(0.5,0,0,50)
+AvatarIcon.AnchorPoint = Vector2.new(0.5,0)
+AvatarIcon.BackgroundTransparency = 1
+AvatarIcon.Image = "rbxassetid://110756262965540"
+AvatarIcon.ZIndex = 4
+local Body = Instance.new("Frame",Main)
+Body.Size = UDim2.new(1,-40,1,-100)
+Body.Position = UDim2.new(0,20,0,80)
+Body.BackgroundTransparency = 1
+local StatsBox = Instance.new("Frame",Body)
+StatsBox.Size = UDim2.new(0.48,10,1,0)
+StatsBox.BackgroundColor3 = Color3.fromRGB(18,18,18)
+StatsBox.BackgroundTransparency = 0.3
+StatsBox.BorderSizePixel = 0
+Instance.new("UICorner",StatsBox).CornerRadius = UDim.new(0,14)
+Instance.new("UIStroke",StatsBox).Color = Color3.fromRGB(255,170,60)
+local StatsTitle = Instance.new("TextLabel",StatsBox)
+StatsTitle.Size = UDim2.new(1,0,0,30)
+StatsTitle.BackgroundTransparency = 1
+StatsTitle.Text = "Account Stats"
+StatsTitle.TextColor3 = Color3.fromRGB(255,180,90)
+StatsTitle.Font = Enum.Font.GothamBold
+StatsTitle.TextSize = 16
+local LevelLabel = Instance.new("TextLabel", StatsBox)
+LevelLabel.Size = UDim2.new(1,-20,0,22)
+LevelLabel.Position = UDim2.new(0,10,0,40)
+LevelLabel.BackgroundTransparency = 1
+LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
+LevelLabel.TextColor3 = Color3.fromRGB(235,235,235)
+LevelLabel.Font = Enum.Font.Gotham
+LevelLabel.TextSize = 14
+LevelLabel.Text = "Level : Loading..."
+local BeliLabel = Instance.new("TextLabel", StatsBox)
+BeliLabel.Size = UDim2.new(1,-20,0,22)
+BeliLabel.Position = UDim2.new(0,10,0,66)
+BeliLabel.BackgroundTransparency = 1
+BeliLabel.TextXAlignment = Enum.TextXAlignment.Left
+BeliLabel.TextColor3 = Color3.fromRGB(235,235,235)
+BeliLabel.Font = Enum.Font.Gotham
+BeliLabel.TextSize = 14
+BeliLabel.Text = "Beli : Loading..."
+local ChestLabel = Instance.new("TextLabel", StatsBox)
+ChestLabel.Size = UDim2.new(1,-20,0,22)
+ChestLabel.Position = UDim2.new(0,10,0,92)
+ChestLabel.BackgroundTransparency = 1
+ChestLabel.TextXAlignment = Enum.TextXAlignment.Left
+ChestLabel.TextColor3 = Color3.fromRGB(235,235,235)
+ChestLabel.Font = Enum.Font.Gotham
+ChestLabel.TextSize = 14
+ChestLabel.Text = "Chest in Map: Loading..."
+local ServerStatusLabel = Instance.new("TextLabel", StatsBox)
+ServerStatusLabel.Size = UDim2.new(1,-20,0,22)
+ServerStatusLabel.Position = UDim2.new(0,10,0,118)
+ServerStatusLabel.BackgroundTransparency = 1
+ServerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+ServerStatusLabel.TextColor3 = Color3.fromRGB(235,235,235)
+ServerStatusLabel.Font = Enum.Font.Gotham
+ServerStatusLabel.TextSize = 14
+ServerStatusLabel.Text = "Server Status: Active"
+local PlayerInfoBox = Instance.new("Frame",Body)
+PlayerInfoBox.Size = UDim2.new(0.48,0,1,0)
+PlayerInfoBox.Position = UDim2.new(0.52,0,0,0)
+PlayerInfoBox.BackgroundColor3 = Color3.fromRGB(18,18,18)
+PlayerInfoBox.BackgroundTransparency = 0.32
+PlayerInfoBox.BorderSizePixel = 0
+Instance.new("UICorner",PlayerInfoBox).CornerRadius = UDim.new(0,14)
+local InfoStroke = Instance.new("UIStroke",PlayerInfoBox)
+InfoStroke.Color = Color3.fromRGB(170,120,255)
+InfoStroke.Thickness = 2
+local PlayerAvatar = Instance.new("ImageLabel",PlayerInfoBox)
+PlayerAvatar.Size = UDim2.new(0,70,0,70)
+PlayerAvatar.Position = UDim2.new(0.5,0,0,20)
+PlayerAvatar.AnchorPoint = Vector2.new(0.5,0)
+PlayerAvatar.BackgroundTransparency = 1
+PlayerAvatar.ZIndex = 5
+PlayerAvatar.Image = "rbxassetid://110756262965540"
+Instance.new("UICorner",PlayerAvatar).CornerRadius = UDim.new(1,0)
+local AvatarStroke = Instance.new("UIStroke",PlayerAvatar)
+AvatarStroke.Color = Color3.fromRGB(180,130,255)
+AvatarStroke.Thickness = 2
+task.spawn(function()
+    local ok, img = pcall(function()
+        return Players:GetUserThumbnailAsync(
+            LocalPlayer.UserId,
+            Enum.ThumbnailType.HeadShot,
+            Enum.ThumbnailSize.Size420x420
+        )
+    end)
+    if ok and img and img ~= "" then
+        PlayerAvatar.Image = img
+    end
+end)
+local NameLabel = Instance.new("TextLabel",PlayerInfoBox)
+NameLabel.Size = UDim2.new(1,-20,0,24)
+NameLabel.Position = UDim2.new(0.5,0,0,105)
+NameLabel.AnchorPoint = Vector2.new(0.5,0)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = "Name : "..LocalPlayer.Name
+NameLabel.TextColor3 = Color3.fromRGB(255,220,150)
+NameLabel.Font = Enum.Font.GothamBold
+NameLabel.TextSize = 15
+NameLabel.TextXAlignment = Enum.TextXAlignment.Center
+NameLabel.ZIndex = 6
+local TimeLabel = Instance.new("TextLabel",PlayerInfoBox)
+TimeLabel.Size = UDim2.new(1,-20,0,22)
+TimeLabel.Position = UDim2.new(0.5,0,0,132)
+TimeLabel.AnchorPoint = Vector2.new(0.5,0)
+TimeLabel.BackgroundTransparency = 1
+TimeLabel.Text = "Active Time : 00:00"
+TimeLabel.TextColor3 = Color3.fromRGB(235,235,235)
+TimeLabel.Font = Enum.Font.Gotham
+TimeLabel.TextSize = 14
+TimeLabel.TextXAlignment = Enum.TextXAlignment.Center
+TimeLabel.ZIndex = 6
+local function formatNumber(num)
+    if not num then return "0" end
+    local formatted = tostring(num)
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+local function formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = math.floor(seconds % 60)    
+    if hours > 0 then
+        return string.format("%02d:%02d:%02d", hours, minutes, secs)
+    else
+        return string.format("%02d:%02d", minutes, secs)
+    end
+end
+local function scanAllChests()
+    local chests = {}    
+    for _, Object in pairs(game.Workspace:GetDescendants()) do
+        if Object.Name:find("Chest") and Object.ClassName == "Part" then
+            table.insert(chests, Object)
+        end
+    end    
+    for _, folder in pairs(game:GetDescendants()) do
+        if folder.Name:find("Chest") and folder.ClassName == "Folder" then
+            for _, chest in pairs(folder:GetDescendants()) do
+                if chest.ClassName == "Part" then
+                    table.insert(chests, chest)
+                end
+            end
+        end
+    end  
+    return chests
+end
+local function serverHop()
+    if isHopping then return end
+    isHopping = true   
+    local gameId = game.PlaceId
+    local currentJobId = game.JobId    
+    local success, result = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games/" .. gameId .. "/servers/Public?sortOrder=Asc&limit=100")
+    end)   
+    if not success then
+        warn("Không lấy được danh sách server.")
+        isHopping = false
+        return
+    end   
+    local data = HttpService:JSONDecode(result)
+    local servers = {}    
+    if data and data.data then
+        for _, server in pairs(data.data) do
+            if server.id ~= currentJobId and server.playing < server.maxPlayers then
+                table.insert(servers, server.id)
+            end
+        end
+    end    
+    if #servers > 0 then
+        local randomServer = servers[math.random(1, #servers)]       
+        ButtonText.Text = "Chuyển Server..."
+        ButtonText.TextColor3 = Color3.fromRGB(100, 255, 100)
+        ServerStatusLabel.Text = "Server Status: Hopping..."       
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "NICEHUB",
+            Text = "Đang chuyển server...",
+            Duration = 3
+        })        
+        task.wait(1)       
+        local teleportSuccess, teleportError = pcall(function()
+            TeleportService:TeleportToPlaceInstance(gameId, randomServer, Players.LocalPlayer)
+        end)      
+        if not teleportSuccess then
+            warn("Lỗi khi chuyển server:", teleportError)
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "ERRORNICEHUB",
+                Text = "Lỗi chuyển server!",
+                Duration = 3
+            })
+            ButtonText.Text = "Hop Server"
+            ButtonText.TextColor3 = Color3.fromRGB(255, 190, 90)
+            ServerStatusLabel.Text = "Server Status: Error"
+            isHopping = false
+        end
+    else
+        warn("Không tìm thấy server phù hợp.")
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "ERRORNICEHUB",
+            Text = "Không tìm thấy server!",
+            Duration = 3
+        })
+        ButtonText.Text = "Hop Server"
+        ButtonText.TextColor3 = Color3.fromRGB(255, 190, 90)
+        ServerStatusLabel.Text = "Server Status: No servers"
+        isHopping = false
+    end
+end
+local function startAutoHop()
+    if autoFarmEnabled then
+        spawn(function()
+            while autoFarmEnabled and not isHopping do
+                serverHop()
+                task.wait(5)
+            end
+        end)
+    end
+end
+local function updateStats()
+    local plr = game:GetService("Players").LocalPlayer    
+    if plr and plr:FindFirstChild("Data") then
+        if plr.Data:FindFirstChild("Level") then
+            LevelLabel.Text = "Level : " .. formatNumber(plr.Data.Level.Value)
+        else
+            LevelLabel.Text = "Level : Not Found"
+        end
+        if plr.Data:FindFirstChild("Beli") then
+            BeliLabel.Text = "Beli : " .. formatNumber(plr.Data.Beli.Value)
+        else
+            BeliLabel.Text = "Beli : Not Found"
+        end
+    else
+        LevelLabel.Text = "Level : Data not loaded"
+        BeliLabel.Text = "Beli : Data not loaded"
+    end
+end
+local function updateChestAndServer()
+    local emptyServerTime = 0
+    local maxWaitTime = 2    
+    while true do
+        local currentChests = scanAllChests()
+        local chestCount = #currentChests       
+        ChestLabel.Text = "Chest in Map: " .. formatNumber(chestCount)        
+        if chestCount == 0 then
+            if emptyServerTime == 0 then
+                emptyServerTime = tick()
+                ServerStatusLabel.Text = "Server Status: No chests, waiting..."
+            else
+                local timeElapsed = tick() - emptyServerTime
+                if timeElapsed >= maxWaitTime then
+                    if autoFarmEnabled then
+                        ServerStatusLabel.Text = "Server Status: Auto hopping..."
+                        serverHop()
+                        emptyServerTime = 0
+                    end
+                else
+                    local timeLeft = math.floor(maxWaitTime - timeElapsed)
+                    ServerStatusLabel.Text = "Server Status: Hopping in " .. timeLeft .. "s"
+                end
+            end
+        else
+            emptyServerTime = 0
+            ServerStatusLabel.Text = "Server Status: Active"
+        end        
+        task.wait(2)
+    end
+end
+local function setupDataConnections()
+    local plr = game:GetService("Players").LocalPlayer
+    if not plr:FindFirstChild("Data") then
+        plr.ChildAdded:Connect(function(child)
+            if child.Name == "Data" then
+                task.wait(0.5)
+                setupDataConnections()
+            end
+        end)
+        return
+    end    
+    local data = plr.Data   
+    if data:FindFirstChild("Level") then
+        data.Level.Changed:Connect(function()
+            updateStats()
+        end)
+    end    
+    if data:FindFirstChild("Beli") then
+        data.Beli.Changed:Connect(function()
+            updateStats()
+        end)
+    end
+    
+    updateStats()
+end
+local isDragging = false
+local dragStartPos
+local startContainerPos
+local isClick = true
+local dragThreshold = 10
+local lastClickTime = 0
+local CLICK_DELAY = 0.2
+local hoverDebounce = false
+local pulseConnection
+local function playClickEffect()
+    local clickTween = TweenService:Create(
+        Container,
+        TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {
+            Size = UDim2.fromOffset(185, 58)
+        }
+    )
+    
+    local containerGlowTween = TweenService:Create(
+        ContainerGlow,
+        TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {
+            Transparency = 0.2,
+            Thickness = 4
+        }
+    )
+    
+    local buttonTween = TweenService:Create(
+        Button,
+        TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {
+            BackgroundTransparency = 0.7
+        }
+    )   
+    
+    clickTween:Play()
+    containerGlowTween:Play()
+    buttonTween:Play()    
+    task.delay(0.1, function()
+        local resetTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Size = UDim2.fromOffset(190, 62)
+            }
+        )
+        
+        local containerResetTween = TweenService:Create(
+            ContainerGlow,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Transparency = 0,
+                Thickness = 3
+            }
+        )
+        
+        local buttonResetTween = TweenService:Create(
+            Button,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundTransparency = 0.6
+            }
+        )        
+        resetTween:Play()
+        containerResetTween:Play()
+        buttonResetTween:Play()
+    end)
+end
+local function toggleAutoFarm()
+    autoFarmEnabled = not autoFarmEnabled    
+    if autoFarmEnabled then
+        ButtonText.Text = "Đang Hop Server..."
+        ButtonText.TextColor3 = Color3.fromRGB(100, 255, 100)
+        
+        local containerTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundColor3 = Color3.fromRGB(60, 255, 100),
+                BackgroundTransparency = 0.1
+            }
+        )
+        
+        local glowTween = TweenService:Create(
+            ContainerGlow,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Color = Color3.fromRGB(100, 255, 140)
+            }
+        )
+        
+        local strokeTween = TweenService:Create(
+            Stroke,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Color = Color3.fromRGB(100, 255, 100)
+            }
+        )
+        
+        local innerTween = TweenService:Create(
+            InnerBackground,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundTransparency = 0.5
+            }
+        )
+        
+        containerTween:Play()
+        glowTween:Play()
+        strokeTween:Play()
+        innerTween:Play()       
+        startAutoHop()
+    else
+        ButtonText.Text = "Hop Server"
+        ButtonText.TextColor3 = Color3.fromRGB(255, 190, 90)
+        
+        local containerTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundColor3 = Color3.fromRGB(255, 170, 60),
+                BackgroundTransparency = 0
+            }
+        )
+        
+        local glowTween = TweenService:Create(
+            ContainerGlow,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Color = Color3.fromRGB(255, 200, 100)
+            }
+        )
+        
+        local strokeTween = TweenService:Create(
+            Stroke,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Color = Color3.fromRGB(255, 170, 60)
+            }
+        )
+        
+        local innerTween = TweenService:Create(
+            InnerBackground,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundTransparency = 0.4
+            }
+        )
+        
+        containerTween:Play()
+        glowTween:Play()
+        strokeTween:Play()
+        innerTween:Play()
+    end  
+    print("Auto Hop Server:", autoFarmEnabled and "ENABLED" or "DISABLED")
+end
+local function startDrag(input)
+    isDragging = true
+    isClick = true
+    dragStartPos = input.Position
+    startContainerPos = Container.Position
+    Container.BackgroundTransparency = 0.2
+    InnerBackground.BackgroundTransparency = 0.5
+    Button.BackgroundTransparency = 0.7
+    ContainerGlow.Thickness = 4
+    ContainerGlow.Transparency = 0.2
+end
+local function updateDrag(input)
+    if not isDragging then return end   
+    local delta = input.Position - dragStartPos
+    local distanceMoved = delta.Magnitude    
+    if distanceMoved > dragThreshold then
+        isClick = false
+        Container.Position = UDim2.new(
+            startContainerPos.X.Scale,
+            startContainerPos.X.Offset + delta.X,
+            startContainerPos.Y.Scale,
+            startContainerPos.Y.Offset + delta.Y
+        )
+    end
+end
+local function endDrag()
+    if not isDragging then return end    
+    isDragging = false
+    Container.BackgroundTransparency = 0
+    InnerBackground.BackgroundTransparency = 0.4
+    Button.BackgroundTransparency = 0.6
+    ContainerGlow.Thickness = 3
+    ContainerGlow.Transparency = 0
+    local viewportSize = ButtonScreenGui.AbsoluteSize
+    local containerSize = Container.AbsoluteSize
+    local position = Container.Position   
+    local minX = 0
+    local maxX = viewportSize.X - containerSize.X
+    local minY = 0
+    local maxY = viewportSize.Y - containerSize.Y  
+    local currentX = position.X.Offset
+    local currentY = position.Y.Offset    
+    if currentX < minX then
+        Container.Position = UDim2.new(position.X.Scale, minX, position.Y.Scale, currentY)
+    elseif currentX > maxX then
+        Container.Position = UDim2.new(position.X.Scale, maxX, position.Y.Scale, currentY)
+    end    
+    if currentY < minY then
+        Container.Position = UDim2.new(position.X.Scale, currentX, position.Y.Scale, minY)
+    elseif currentY > maxY then
+        Container.Position = UDim2.new(position.X.Scale, currentX, position.Y.Scale, maxY)
+    end    
+    return isClick
+end
+local function handleInputBegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        startDrag(input)
+        return true
+    end
+    return false
+end
+local function handleInputChanged(input)
+    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(input)
+    end
+end
+local function handleInputEnded(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch)
+    and isDragging then
+        local wasClick = endDrag()
+        if wasClick and (tick() - lastClickTime) > CLICK_DELAY then
+            lastClickTime = tick()
+            playClickEffect()
+            task.wait(0.12)
+            toggleAutoFarm()
+        end
+    end
+end
+Container.InputBegan:Connect(handleInputBegan)
+Container.InputChanged:Connect(handleInputChanged)
+Container.InputEnded:Connect(handleInputEnded)
+Button.InputBegan:Connect(handleInputBegan)
+Button.InputChanged:Connect(handleInputChanged)
+Button.InputEnded:Connect(handleInputEnded)
+Container.MouseEnter:Connect(function()
+    if not isDragging and not hoverDebounce then
+        hoverDebounce = true
+        local hoverTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundTransparency = 0.1
+            }
+        )
+        local glowTween = TweenService:Create(
+            ContainerGlow,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Thickness = 4
+            }
+        )
+        hoverTween:Play()
+        glowTween:Play()
+        task.wait(0.2)
+        hoverDebounce = false
+    end
+end)
+Container.MouseLeave:Connect(function()
+    if not isDragging and not hoverDebounce then
+        hoverDebounce = true
+        local leaveTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundTransparency = 0
+            }
+        )
+        local glowTween = TweenService:Create(
+            ContainerGlow,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Thickness = 3
+            }
+        )
+        leaveTween:Play()
+        glowTween:Play()
+        task.wait(0.2)
+        hoverDebounce = false
+    end
+end)
+local function updatePulseEffect()
+    if pulseConnection then
+        pulseConnection:Disconnect()
+    end
+    pulseConnection = RunService.Heartbeat:Connect(function()
+        if autoFarmEnabled then
+            local time = tick()
+            local pulse = math.sin(time * 5) * 0.1 + 0.9
+            ContainerGlow.Transparency = 0.2 + (0.3 * (1 - pulse))
+            Glow.Transparency = 0.7 + (0.15 * (1 - pulse))
+            InnerBackground.BackgroundTransparency = 0.4 + (0.1 * (1 - pulse))
+            Button.BackgroundTransparency = 0.6 + (0.1 * (1 - pulse))
+        else
+            ContainerGlow.Transparency = 0
+            Glow.Transparency = 0.85
+            InnerBackground.BackgroundTransparency = 0.4
+            Button.BackgroundTransparency = 0.6
+        end
+    end)
+end
+updatePulseEffect()
+local function playToggleEffect()
+    if autoFarmEnabled then
+        local scaleTween = TweenService:Create(
+            Container,
+            TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {
+                Size = UDim2.fromOffset(195, 65)
+            }
+        )
+        scaleTween:Play()
+        task.delay(0.3, function()
+            TweenService:Create(
+                Container,
+                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {
+                    Size = UDim2.fromOffset(190, 62)
+                }
+            ):Play()
+        end)
+    end
+end
+local originalToggleAutoFarm = toggleAutoFarm
+toggleAutoFarm = function()
+    playToggleEffect()
+    originalToggleAutoFarm()
+    task.wait(0.5)
+    updatePulseEffect()
+end
+task.spawn(function()
+    while PlayerInfoBox.Parent do
+        local elapsed = os.clock() - startTime
+        TimeLabel.Text = "Active Time : " .. formatTime(elapsed)
+        task.wait(1)
+    end
+end)
+task.spawn(function()
+    while true do
+        updateStats()
+        task.wait(1)
+    end
+end)
+task.spawn(setupDataConnections)
+task.spawn(updateChestAndServer)
+ScreenGui.AncestryChanged:Connect(function(_,p)
+    if not p then
+        WorldBlur:Destroy()
+    end
+end)
+ButtonScreenGui.Destroying:Connect(function()
+    if pulseConnection then
+        pulseConnection:Disconnect()
+    end
+end)
+
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local TeleportDelay = 1.5
+local function getCharacter()
+    if not LocalPlayer.Character then
+        LocalPlayer.CharacterAdded:Wait()
+    end
+    LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+    return LocalPlayer.Character
+end
+local function DistanceFromPlrSort(ObjectList)
+    local RootPart = getCharacter().HumanoidRootPart
+    table.sort(ObjectList, function(ChestA, ChestB)
+        local RootPos = RootPart.Position
+        local DistanceA = (RootPos - ChestA.Position).Magnitude
+        local DistanceB = (RootPos - ChestB.Position).Magnitude
+        return DistanceA < DistanceB
+    end)
+end
+local UncheckedChests, FirstRun = {}, true
+local function getChestsSorted()
+    if FirstRun then
+        FirstRun = false
+        for _, Object in pairs(game:GetDescendants()) do
+            if Object.Name:find("Chest") and Object.ClassName == "Part" then
+                table.insert(UncheckedChests, Object)
+            end
+        end
+    end
+    local Chests = {}
+    for _, Chest in pairs(UncheckedChests) do
+        if Chest:FindFirstChild("TouchInterest") then
+            table.insert(Chests, Chest)
+        end
+    end
+    DistanceFromPlrSort(Chests)
+    return Chests
+end
+local function toggleNoclip(Toggle)
+    local character = getCharacter()
+    for _, v in pairs(character:GetChildren()) do
+        if v:IsA("BasePart") then
+            v.CanCollide = not Toggle
+        end
+    end
+end
+local function lockCharacterPosition()
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoid and rootPart then
+            humanoid.PlatformStand = true
+            humanoid.WalkSpeed = 0
+            humanoid.JumpPower = 0
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        end
+    end
+end
+local function TeleportAndLock(Goal)
+    local character = getCharacter()
+    local RootPart = character.HumanoidRootPart
+    lockCharacterPosition()   
+    toggleNoclip(true)
+    local newPosition = Goal.Position + Vector3.new(0, 2, 0)
+    RootPart.CFrame = CFrame.new(newPosition, Goal.Position)
+    RootPart.Velocity = Vector3.new(0, 0, 0)
+    RootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    RootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)   
+    toggleNoclip(false)
+    local lockStartTime = tick()
+    while tick() - lockStartTime < TeleportDelay do
+        RootPart.CFrame = CFrame.new(newPosition, Goal.Position)
+        RootPart.Velocity = Vector3.new(0, 0, 0)
+        lockCharacterPosition()        
+        task.wait(0.05)
+    end
+end
+local function detectAntiCheat()
+    local warnings = {}
+    if not LocalPlayer.Character then
+        table.insert(warnings, "Nhân vật bị mất")
+    end    
+    return warnings
+end
+local function resetCharacter()
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.Health = 0
+        else
+            character:BreakJoints()
+        end
+    end
+    task.wait(2)
+end
+local function continuousChestTP()
+    lockCharacterPosition()  
+    while true do
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            getCharacter()
+            task.wait(1)
+            lockCharacterPosition()
+        end
+        local warnings = detectAntiCheat()
+        if #warnings > 0 then
+            warn("PHÁT HIỆN BẤT THƯỜNG")
+            resetCharacter()
+            task.wait(2)
+            lockCharacterPosition()
+        end        
+        local Chests = getChestsSorted()        
+        if #Chests > 0 then
+            for i = 1, #Chests do
+                if Chests[i] and Chests[i].Parent then
+                    TeleportAndLock(Chests[i].CFrame)
+                end
+            end
+        else
+            task.wait(1)
+        end
+    end
+end
+task.spawn(function()
+    local rs = game:GetService("ReplicatedStorage")
+    while task.wait(5) do
+        pcall(function()
+            rs.Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+        end)
+    end
+end)
+LocalPlayer.CharacterAdded:Connect(function(character)
+    task.wait(1)
+    lockCharacterPosition()    
+    if not _G.Farming then
+        _G.Farming = true
+        task.spawn(continuousChestTP)
+    end
+end)
+if not _G.Farming then
+    _G.Farming = true
+    task.spawn(continuousChestTP)
+end
+
